@@ -214,6 +214,23 @@ export default {
 			else
 				alert(await response.text());
 		},
+		async saveOpusFilter() {
+			const hash = this.filterStepsStateHash;
+
+			const response = await fetch(`/datasets/${encodeURIComponent(this.dataset.name)}/configuration.yaml`, {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+					'Accept': 'application/json'
+				},
+				body: JSON.stringify(this.filterSteps)
+			});
+
+			//if (response.ok)
+			//	this.filterStepsLastSave = hash;
+			//else
+			//	alert(await response.text());
+		},
 		createFilterStep(filter) {
 			return {
 				filter: filter.name,
@@ -344,6 +361,8 @@ export default {
 			</label>
 
 			<button v-on:click="saveFilterSteps" v-bind:disabled="!filterStepsChangedSinceLastSave">Save filtering steps</button>
+
+            <button v-on:click="saveOpusFilter">OpusFilter config</button>
 
 			<label v-if="isFetchingSamples">Loading sample…</label>
 		</div>

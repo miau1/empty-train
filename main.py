@@ -27,6 +27,7 @@ from shutil import copyfileobj
 from pprint import pprint
 
 import opusfilter.filters as opusfilters
+import yaml
 
 
 from datasets import list_datasets, Path
@@ -211,6 +212,9 @@ def sample_path(name:str, langs: Iterable[str]):
 def filter_configuration_path(name:str) -> str:
     return dataset_path(name, '{}.filters.json')
 
+def filter_configuration_path_yaml(name:str) -> str:
+    return dataset_path(name, '{}.filters.yaml')
+
 
 async def compute_sample(name:str, columns:List[Tuple[str,File]]):
     langs = [lang for lang, _ in columns]
@@ -362,6 +366,23 @@ def api_get_dataset_filters(name:str) -> List[FilterStep]:
 def api_update_dataset_filters(name:str, filters:List[FilterStep]):
     with open(filter_configuration_path(name), 'w') as fh:
         return json.dump([step.dict() for step in filters], fh)
+
+
+@app.post('/datasets/{name:path}/configuration.yaml')
+def api_update_dataset_filters(name:str, filters:List[FilterStep]):
+    with open(filter_configuration_path_yaml(name), 'w') as fh:
+        input_files = [v.name for v in list_datasets(DATA_PATH).get(name).values()]
+        output_files = [".".join(n.split(".")[:-1]+["filtered"]+n.split(".")[-1:]) for n in input_files]
+        yaml_dict = {"steps":
+                [{"type": "filter",
+                    "parameters":
+                    {"inputs": input_files,
+                        "outputs": output_files,
+                        "filters": [{step.dict()["filter"]: step.dict()["parameters"]} for step in filters]
+                        }
+                    }]
+                }
+        return yaml.dump(yaml_dict, fh, sort_keys=False)
 
 
 @app.get('/filters/')
