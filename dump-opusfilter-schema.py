@@ -17,6 +17,8 @@ def derive_filter_definition(filter_cls):
             default=default_val
         )
 
+    if 'unit' in parameters.keys():
+        parameters['unit']['allowed_values'] = ['char', 'word']
 
     return dict(
         type='bilingual',

@@ -226,10 +226,10 @@ export default {
 				body: JSON.stringify(this.filterSteps)
 			});
 
-			//if (response.ok)
-			//	this.filterStepsLastSave = hash;
-			//else
-			//	alert(await response.text());
+			if (response.ok)
+				alert(`data/train-parts/${encodeURIComponent(this.dataset.name)}.filters.yaml saved`);
+			else
+				alert(await response.text());
 		},
 		createFilterStep(filter) {
 			return {
