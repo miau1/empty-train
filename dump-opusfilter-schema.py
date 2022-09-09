@@ -12,8 +12,14 @@ def derive_filter_definition(filter_cls):
 
     # pprint(filter_spec)
     for arg, default_val in zip(filter_spec.args[1:], filter_spec.defaults or []): # skipping `self`
+        type_name = type(default_val).__name__
+        # If there is no default value, we have to hard code types, and types like tuple
+        # are not supported by the interface
+        if type_name in ['NoneType', 'tuple']:
+            type_name = 'str'
+            default_val = 'NOT IMPLEMENTED'
         parameters[arg] = dict(
-            type=type(default_val).__name__,
+            type= type_name,
             default=default_val
         )
 
@@ -23,6 +29,7 @@ def derive_filter_definition(filter_cls):
     return dict(
         type='bilingual',
         name=filter_cls.__name__,
+        display_name=filter_cls.__name__.replace('Filter', ''),
         description=filter_cls.__doc__,
         command=f'opusfilter:{filter_cls.__name__}',
         parameters=parameters
