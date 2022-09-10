@@ -288,7 +288,8 @@ async def get_sample(name:str, filters:List[FilterStep]) -> AsyncIterator[Filter
             filter_env['thresholds'] = [float(v) for v in filter_env['thresholds']]
             if filter_env['langid_languages'][0] == '':
                 filter_env['langid_languages'] = None
-            filter_env['cld2_options'] = eval(filter_env['cld2_options'])
+            if filter_env['cld2_options'] != '':
+                filter_env['cld2_options'] = eval(filter_env['cld2_options'])
 
         print(filter_env)
 
