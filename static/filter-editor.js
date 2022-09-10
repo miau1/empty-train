@@ -418,7 +418,7 @@ export default {
 					v-bind:clone="createFilterStep">
 					<template v-slot:item="{element:filter}">
 						<li class="filter">
-							<span v-bind:title="filter.description" class="filter-name">{{filter.name}}</span>
+							<span v-bind:title="filter.description" class="filter-name">{{filter.display_name}}</span>
 							<span class="filter-type">{{filter.type}}</span>
 							<button v-on:click="addFilterStep(filter)" class="add-filter-btn">Add</button>
 						</li>

@@ -117,6 +117,7 @@ FilterParameter = Union[
 class Filter(BaseModel):
     type: FilterType
     name: str # comes from filename by default
+    display_name: str
     description: Optional[str]
     command: str
     basedir: Optional[str] # same as .json file by default
