@@ -17,7 +17,11 @@ def derive_filter_definition(filter_cls):
         # are not supported by the interface
         if type_name in ['NoneType', 'tuple']:
             type_name = 'str'
-            default_val = 'NOT IMPLEMENTED'
+            if filter_cls.__name__ == 'SimilarityFilter':
+                default_val = ' '.join([str(v) for v in list(default_val)])
+            else:
+                default_val = ''
+
         parameters[arg] = dict(
             type= type_name,
             default=default_val
@@ -25,6 +29,8 @@ def derive_filter_definition(filter_cls):
 
     if 'unit' in parameters.keys():
         parameters['unit']['allowed_values'] = ['char', 'word']
+    if 'id_method' in parameters.keys():
+        parameters['id_method']['allowed_values'] = ['langid', 'cld2', 'fasttext']
 
     return dict(
         type='bilingual',

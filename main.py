@@ -275,6 +275,23 @@ async def get_sample(name:str, filters:List[FilterStep]) -> AsyncIterator[Filter
         for name, props in filter_definition.parameters.items():
             filter_env[name] = props.export(filter_step.parameters[name])
 
+        # Convert str arguments to lists or tuples
+        if filter_definition.name == 'CharacterScoreFilter':
+            for para in ['scripts', 'thresholds']:
+                filter_env[para] = filter_env[para].split(' ')
+            filter_env['thresholds'] = [float(v) for v in filter_env['thresholds']]
+        if filter_definition.name == 'SimilarityFilter':
+            filter_env['weights'] = tuple([int(v) for v in filter_env['weights'].split(' ')])
+        if filter_definition.name == 'LanguageIDFilter':
+            for para in ['languages', 'thresholds', 'langid_languages']:
+                filter_env[para] = filter_env[para].split(' ')
+            filter_env['thresholds'] = [float(v) for v in filter_env['thresholds']]
+            if filter_env['langid_languages'][0] == '':
+                filter_env['langid_languages'] = None
+            filter_env['cld2_options'] = eval(filter_env['cld2_options'])
+
+        print(filter_env)
+
         # instantiate actual filter
         filter_inst = getattr(opusfilters, filter_definition.name)(**filter_env)
 
