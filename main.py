@@ -248,6 +248,32 @@ class FilterOutput(BaseModel):
             stderr=stderr)
 
 
+def opusfilter_parameter_format(name:str, params:dict) -> dict:
+        # Convert str arguments to lists or tuples
+        if name == 'CharacterScoreFilter':
+            for para in ['scripts', 'thresholds']:
+                params[para] = params[para].split(' ')
+            params['thresholds'] = [float(v) for v in params['thresholds']]
+        if name == 'SimilarityFilter':
+            params['weights'] = tuple([int(v) for v in params['weights'].split(' ')])
+        if name == 'LanguageIDFilter':
+            for para in ['languages', 'thresholds', 'langid_languages']:
+                params[para] = params[para].split(' ')
+            if params['thresholds'][0] == '':
+                params['thresholds'] = None
+            else:
+                params['thresholds'] = [float(v) for v in params['thresholds']]
+            if params['langid_languages'][0] == '':
+                params['langid_languages'] = None
+            if params['fasttext_model_path'] == '':
+                params['fasttext_model_path'] = None
+            if params['cld2_options'] == '':
+                params['cld2_options'] = None
+            else:
+                params['cld2_options'] = eval(params['cld2_options'])
+        return params
+
+
 async def get_sample(name:str, filters:List[FilterStep]) -> AsyncIterator[FilterOutput]:
     columns: List[Tuple[str,Path]] = sorted(list_datasets(DATA_PATH)[name].items(), key=lambda pair: pair[0])
     langs = [lang for lang, _ in columns]
@@ -275,23 +301,7 @@ async def get_sample(name:str, filters:List[FilterStep]) -> AsyncIterator[Filter
         for name, props in filter_definition.parameters.items():
             filter_env[name] = props.export(filter_step.parameters[name])
 
-        # Convert str arguments to lists or tuples
-        if filter_definition.name == 'CharacterScoreFilter':
-            for para in ['scripts', 'thresholds']:
-                filter_env[para] = filter_env[para].split(' ')
-            filter_env['thresholds'] = [float(v) for v in filter_env['thresholds']]
-        if filter_definition.name == 'SimilarityFilter':
-            filter_env['weights'] = tuple([int(v) for v in filter_env['weights'].split(' ')])
-        if filter_definition.name == 'LanguageIDFilter':
-            for para in ['languages', 'thresholds', 'langid_languages']:
-                filter_env[para] = filter_env[para].split(' ')
-            filter_env['thresholds'] = [float(v) for v in filter_env['thresholds']]
-            if filter_env['langid_languages'][0] == '':
-                filter_env['langid_languages'] = None
-            if filter_env['cld2_options'] != '':
-                filter_env['cld2_options'] = eval(filter_env['cld2_options'])
-
-        print(filter_env)
+        filter_env = opusfilter_parameter_format(filter_definition.name, filter_env)
 
         # instantiate actual filter
         filter_inst = getattr(opusfilters, filter_definition.name)(**filter_env)
@@ -390,6 +400,7 @@ def api_update_dataset_filters(name:str, filters:List[FilterStep]):
 @app.post('/datasets/{name:path}/configuration.yaml')
 def api_update_dataset_filters(name:str, filters:List[FilterStep]):
     with open(filter_configuration_path_yaml(name), 'w') as fh:
+        pprint(filters, indent=2)
         input_files = [v.name for v in list_datasets(DATA_PATH).get(name).values()]
         output_files = [".".join(n.split(".")[:-1]+["filtered"]+n.split(".")[-1:]) for n in input_files]
         yaml_dict = {"steps":
@@ -397,7 +408,8 @@ def api_update_dataset_filters(name:str, filters:List[FilterStep]):
                     "parameters":
                     {"inputs": input_files,
                         "outputs": output_files,
-                        "filters": [{step.dict()["filter"]: step.dict()["parameters"]} for step in filters]
+                        "filters": [{step.dict()["filter"]:
+                            opusfilter_parameter_format(step.dict()["filter"], step.dict()["parameters"])} for step in filters]
                         }
                     }]
                 }
